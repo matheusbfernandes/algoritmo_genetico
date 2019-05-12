@@ -1,5 +1,6 @@
 import numpy as np
 from random import randint, uniform
+import matplotlib.pyplot as plt
 
 
 class AG(object):
@@ -60,7 +61,33 @@ class AG(object):
             if probabilidade <= self.taxa_mutacao:
                 cromossomo[i] = 1 - cromossomo[i]
 
+    def _gerar_pontos(self, lista_pontos):
+        tam_lista = len(lista_pontos)
+        vetor = np.empty(tam_lista)
+        for i in range(tam_lista):
+            vetor[i] = self._mapear_cromossomo(lista_pontos[i])
+        return vetor
+
+    def _gerar_grafico(self, historico):
+        pontos_x = np.arange(-10.0, 10.0, step=0.1)
+        pontos_y = self._funcao_aptidao(pontos_x)
+
+        qtd_plots = len(historico)
+        f, axarr = plt.subplots(qtd_plots, figsize=(10, 15), sharex='all', sharey='all')
+        for i in range(axarr.shape[0]):
+            axarr[i].set_title("Geração {:s}".format("inicial" if i == 0 else "i"))
+            axarr[i].plot(pontos_x, pontos_y)
+            axarr[i].plot(self._gerar_pontos(historico[i]), self._funcao_aptidao(self._gerar_pontos(historico[i])), 'ro')
+
+        f.subplots_adjust(hspace=0)
+        for ax in axarr:
+            ax.set(xlabel='x', ylabel="f(x)=x²-3*x+4")
+        for ax in axarr:
+            ax.label_outer()
+        f.show()
+
     def selecionar(self):
+        historico = [self.populacao.copy()]
         for geracao in range(self.num_geracoes):
             prox_geracao = []
             while len(prox_geracao) < self.tam_populacao_inicial:
@@ -72,7 +99,6 @@ class AG(object):
                 prox_geracao.append(filho_1)
                 prox_geracao.append(filho_2)
             self.populacao = prox_geracao
-        for cromossomo in self.populacao:
-            print(self._mapear_cromossomo(cromossomo))
-            print(self._funcao_aptidao(self._mapear_cromossomo(cromossomo)))
-
+            if (geracao + 1) % 10 == 0:
+                historico.append(self.populacao.copy())
+        self._gerar_grafico(historico)
