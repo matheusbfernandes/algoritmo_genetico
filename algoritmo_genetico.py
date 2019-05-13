@@ -75,9 +75,10 @@ class AG(object):
         qtd_plots = len(historico)
         f, axarr = plt.subplots(qtd_plots, figsize=(10, 15), sharex='all', sharey='all')
         for i in range(axarr.shape[0]):
+            vetor_pontos = self._gerar_pontos(historico[i])
             axarr[i].set_title("Geração {:s}".format("inicial" if i == 0 else "i"))
             axarr[i].plot(pontos_x, pontos_y)
-            axarr[i].plot(self._gerar_pontos(historico[i]), self._funcao_aptidao(self._gerar_pontos(historico[i])), 'ro')
+            axarr[i].plot(vetor_pontos, self._funcao_aptidao(vetor_pontos), 'ro')
 
         f.subplots_adjust(hspace=0)
         for ax in axarr:
@@ -86,7 +87,17 @@ class AG(object):
             ax.label_outer()
         f.show()
 
+    def _selecionar_melhor(self, remover_cromossomo=False):
+        vetor_pontos = self._gerar_pontos(self.populacao)
+        pos_melhor = int(np.argmax(self._funcao_aptidao(vetor_pontos)))
+        melhor_binario = self.populacao[pos_melhor]
+        if remover_cromossomo:
+            self.populacao.remove(pos_melhor)
+        return vetor_pontos[pos_melhor], melhor_binario
+
     def selecionar(self):
+        melhor_cromossomo, _ = self._selecionar_melhor()
+        print("Melho indivíduo da geração 1: x= {:.10f}".format(melhor_cromossomo))
         historico = [self.populacao.copy()]
         for geracao in range(self.num_geracoes):
             prox_geracao = []
@@ -98,7 +109,11 @@ class AG(object):
                 self._mutar(filho_2)
                 prox_geracao.append(filho_1)
                 prox_geracao.append(filho_2)
+            melhor_cromossomo, melhor_binario = self._selecionar_melhor()
+            prox_geracao.append(melhor_binario)
+            if (geracao + 1) % 5 == 0:
+                print("Melho indivíduo da geração {:d}: x= {:.10f}".format(geracao + 1, melhor_cromossomo))
+                historico.append(prox_geracao.copy())
+                print(len(prox_geracao))
             self.populacao = prox_geracao
-            if (geracao + 1) % 10 == 0:
-                historico.append(self.populacao.copy())
         self._gerar_grafico(historico)
